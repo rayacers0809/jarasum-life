@@ -37,9 +37,11 @@ const members=[
 const initial={
 day:1,weekday:0,time:"09:40",energy:72,stress:22,confidence:34,skill:12,followers:17,money:85000,affinity:0,storyStep:0,flags:{},logs:[],started:false,route:null
 };
-let S=JSON.parse(localStorage.getItem("jarasum_save_v2")||"null")||structuredClone(initial);
+function cloneInitial(){return JSON.parse(JSON.stringify(initial));}
+function safeLoad(){try{const raw=window.localStorage.getItem("jarasum_save_v2");if(!raw)return cloneInitial();const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||!Number.isInteger(parsed.day)||!Number.isInteger(parsed.route)&&parsed.route!==null)return cloneInitial();return Object.assign(cloneInitial(),parsed);}catch(e){return cloneInitial();}}
+let S=safeLoad();
 let view="home",app=document.getElementById("app");
-function save(){localStorage.setItem("jarasum_save_v2",JSON.stringify(S))}
+function save(){try{window.localStorage.setItem("jarasum_save_v2",JSON.stringify(S));return true;}catch(e){return false;}}
 function m(){return members[S.route||1]}
 function top(){return `<header class="top"><div class="brand">JARASUM LIFE</div><div class="topright">DAY ${S.day} · ${["월","화","수","목","금","토","일"][S.weekday]}<br>${S.time}</div></header>`}
 function nav(){return `<nav class="bottom">${[['home','🏠','홈'],['story','📖','스토리'],['phone','💬','채팅'],['schedule','🗓️','일정'],['profile','👤','상태']].map(([id,ic,n])=>`<button class="${view===id?'active':''}" onclick="go('${id}')"><span>${ic}</span>${n}</button>`).join("")}</nav>`}
@@ -83,7 +85,8 @@ function phone(){view="phone";app.innerHTML=top()+`<main class="wrap"><div class
 function schedule(){view="schedule";app.innerHTML=top()+`<main class="wrap"><div class="eyebrow">CALENDAR</div><h1 class="title">${S.day}일차 일정</h1><div class="card"><div class="event"><div class="time">09:40</div><div><b>기상 / 휴대폰 확인</b><small>하루 시작</small></div></div><div class="event"><div class="time">12:00</div><div><b>점심 및 자유 시간</b><small>컨디션에 따라 활동</small></div></div><div class="event"><div class="time">15:00</div><div><b>콘텐츠 준비</b><small>선택한 활동에 따라 변경</small></div></div><div class="event"><div class="time">19:00</div><div><b>방송 / 개인 일정</b><small>플레이어가 결정</small></div></div><div class="event"><div class="time">23:30</div><div><b>하루 마무리</b><small>다음 날로 이동</small></div></div></div><div class="calgrid">${Array.from({length:28},(_,i)=>`<div class="${i+1===S.day?'today':''}">${i+1}</div>`).join("")}</div><p class="sub">실제 일정은 선택에 따라 달라지며, 모든 행동이 하루를 소비하는 것은 아니다.</p><button class="btn" onclick="endDay()">하루 마무리</button></main>`+nav()}
 function go(v){if(!S.started&&v!=="home"&&v!=="select"){choose();return}if(v==="home")home();if(v==="story")story();if(v==="phone")phone();if(v==="schedule")schedule();if(v==="profile")profile()}
 function selectRoute(i){S.route=i;save();choose()}
-function resetGame(){if(confirm("현재 저장 데이터를 삭제하고 처음부터 시작할까?")){S=structuredClone(initial);save();choose()}}
+function resetGame(){if(confirm("현재 저장 데이터를 삭제하고 처음부터 시작할까?")){S=cloneInitial();save();choose()}}
 window.go=go;window.selectRoute=selectRoute;window.startRoute=startRoute;window.pick=pick;window.activity=activity;window.endDay=endDay;window.resetGame=resetGame;
-if(!S.started||S.route==null)choose();else home();
+try{if(!S.started||S.route==null)choose();else home();}catch(err){console.error("JARASUM LIFE startup error",err);app.innerHTML='<main style="font-family:system-ui;padding:24px;color:#433847"><h2>게임 화면을 불러오지 못했어요</h2><p>새로고침하거나 저장 데이터를 초기화해 주세요.</p><button onclick="localStorage.removeItem(\'jarasum_save_v2\');location.reload()" style="padding:12px;border:0;border-radius:12px;background:#a984a8;color:white">저장 데이터 초기화 후 재시작</button></main>';}
+window.addEventListener("error",function(e){console.error("JARASUM LIFE error",e.error||e.message);});
 </script></body></html>
